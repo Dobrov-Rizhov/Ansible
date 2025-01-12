@@ -24,7 +24,7 @@
 ```bash
 ansible-playbook -i inventory.ini имя_плейбука.yml
 ```
-**Обратная связь: itstudiolinux@gmail.com**
+**✉️ Обратная связь: itstudiolinux@gmail.com**
 
 **Буду рад, если вы поделитесь своими отзывами, замечаниями или предложениями по улучшению плейбуков.**
 
