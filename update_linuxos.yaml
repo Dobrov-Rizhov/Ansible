@@ -1,0 +1,75 @@
+---
+- name: Update Linux OS
+  hosts: all
+  become: True
+  tasks:
+    - name: Update Red Hat family OS ver. 8 - 9
+      dnf: 
+        name: '*'
+        update_cache: yes
+        state: latest
+      when:
+        ansible_os_famyly == 'Red Hat' and ansible_distribution_major_version >= '8'
+      register: dnf_update_result
+
+    - name: Update Red Hat family OS ver. 7
+      yum: 
+        name: '*'
+        update_cache: yes
+        state: latest
+      when:
+        ansible_os_famyly == 'Red Hat' and ansible_distribution_major_version <= '7'
+      register: yum_update_result
+
+    - name: Update Ubuntu family
+      apt: 
+        name: '*'
+        update_cache: yes
+        state: latest
+      when:
+        ansible_os_famyly == 'Debian'
+      register: apt_update_result
+
+    - name: Check if reboot is required (RedHat ver. 8 - 9)
+      command: /usr/bin/needs-restarting -r
+      register: redhat_reboot_check
+      ignore_errors: yes
+      when: 
+        ansible_os_family == "RedHat" and ansible_distribution_major_version >= '8'
+
+    - name: Check if reboot is required (RedHat ver. 7)
+      command: /usr/bin/needs-restarting -r
+      register: redhat7_reboot_check
+      ignore_errors: yes
+      when: 
+        ansible_os_family == "RedHat" and ansible_distribution_major_version <= '7'
+          
+    - name: Check if reboot is required (Debian family)
+      command:  /usr/bin/test -f /var/run/reboot-required
+      register: debian_reboot_check
+      ignore_errors: yes
+      when: 
+        ansible_os_family == "Debian"
+
+    - name: Set reboot flag (RedHat ver. 8 - 9)
+      set_fact:
+        reboot_required: true
+      when: 
+        redhat_reboot_check.stdout != "" and ansible_os_family == "RedHat" and ansible_distribution_major_version >= "8"
+            
+    - name: Set reboot flag (RedHat ver. 7)
+      set_fact:
+        reboot_required: true
+      when: 
+        redhat7_reboot_check.stdout != "" and ansible_os_family == "RedHat" and ansible_distribution_major_version <= "7"
+        
+    - name: Set reboot flag (Debian family)
+      set_fact:
+        reboot_required: true
+      when: 
+        debian_reboot_check.rc == 0 and ansible_os_family == "Debian"
+        
+    - name: Reboot the machine if required
+      reboot:
+      when: reboot_required
+...
